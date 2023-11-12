@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Function to convert video files to mp4
+convert_video() {
+    file="$1"
+    output="${file%.*}.mp4"
+    ffmpeg -i "$file" -vcodec h264 -acodec aac "$output"
+    # Preserve permissions and ownership
+    chown --reference="$file" "$output"
+    chmod --reference="$file" "$output"
+    # Move the original file to the 'original_files' folder
+    mkdir -p "${file%/*}/original_files"
+    mv "$file" "${file%/*}/original_files/"
+}
+
+# Function to convert image files to png
+convert_image() {
+    file="$1"
+    output="${file%.*}.png"
+    convert "$file" "$output"
+    # Preserve permissions and ownership
+    chown --reference="$file" "$output"
+    chmod --reference="$file" "$output"
+    # Move the original file to the 'original_files' folder
+    mkdir -p "${file%/*}/original_files"
+    mv "$file" "${file%/*}/original_files/"
+}
+
+# Prompt the user for the conversion type
+echo "Select the type of conversion:"
+echo "[1] Video and Pictures"
+echo "[2] Video only"
+echo "[3] Pictures only"
+read -p "Enter your choice (1/2/3): " choice
+
+# Get the directory to start from
+dir="$1"
+
+# Create the 'original_files' folder if it doesn't exist
+mkdir -p "$dir/original_files"
+
+# Find files and convert them based on user choice
+find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
+    extension="${file##*.}"
+    lower_extension="${extension,,}" # Convert to lowercase for case-insensitive matching
+
+    case $choice in
+        1)
+            # Video and Pictures
+            if [[ "$lower_extension" =~ ^(avi|flv|wmv|mov|mp4|mts|mkv|webm|mpeg|mpg|3gp|asf|rm|swf|vob|aae|mts)$ ]]; then
+                convert_video "$file" &
+            elif [[ "$lower_extension" =~ ^(jpg|jpeg|bmp|gif|png|tiff|webp)$ ]]; then
+                convert_image "$file" &
+            fi
+            ;;
+        2)
+            # Video only
+            if [[ "$lower_extension" =~ ^(avi|flv|wmv|mov|mp4|mts|mkv|webm|mpeg|mpg|3gp|asf|rm|swf|vob|aae|mts)$ ]]; then
+                convert_video "$file" &
+            fi
+            ;;
+        3)
+            # Pictures only
+            if [[ "$lower_extension" =~ ^(jpg|jpeg|bmp|gif|png|tiff|webp)$ ]]; then
+                convert_image "$file" &
+            fi
+            ;;
+        *)
+            echo "Invalid choice. Exiting."
+            exit 1
+            ;;
+    esac
+done
+
+# Wait for all background jobs to finish
+wait
+
+# Check if all files were converted
+input_files=$(find "$dir" -type f -not -path "$dir/original_files/*")
+converted_files=$(find "$dir/original_files" -type f)
+
+if [[ "$input_files" == "$converted_files" ]]; then
+    echo "All input files were successfully converted. Converted files are in the 'original_files' folder."
+else
+    echo "Some files were not converted. Please check the following input files:"
+    comm -23 <(echo "$input_files" | sort) <(echo "$converted_files" | sort)
+fi

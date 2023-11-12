@@ -49,21 +49,21 @@ find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
     case $choice in
         1)
             # Video and Pictures
-            if [[ "$lower_extension" =~ ^(avi|flv|wmv|mov|mts|mkv|webm|mpeg|mpg|3gp|asf|rm|swf|vob|aae)$ ]]; then
+            if [[ "$lower_extension" =~ ^(avi|flv|wmv|mov|mts|mkv|webm|mpeg|mpg|3gp|asf|rm|swf|vob)$ ]]; then
                 convert_video "$file" &
-            elif [[ "$lower_extension" =~ ^(jpeg|bmp|gif|tiff|webp)$ ]]; then
+            elif [[ "$lower_extension" =~ ^(jpeg|bmp|gif|tiff|webp|aae)$ ]]; then
                 convert_image "$file" &
             fi
             ;;
         2)
             # Video only
-            if [[ "$lower_extension" =~ ^(avi|flv|wmv|mov|mts|mkv|webm|mpeg|mpg|3gp|asf|rm|swf|vob|aae)$ ]]; then
+            if [[ "$lower_extension" =~ ^(avi|flv|wmv|mov|mts|mkv|webm|mpeg|mpg|3gp|asf|rm|swf|vob)$ ]]; then
                 convert_video "$file" &
             fi
             ;;
         3)
             # Pictures only
-            if [[ "$lower_extension" =~ ^(jpeg|bmp|gif|tiff|webp)$ ]]; then
+            if [[ "$lower_extension" =~ ^(jpeg|bmp|gif|tiff|webp|aae)$ ]]; then
                 convert_image "$file" &
             fi
             ;;

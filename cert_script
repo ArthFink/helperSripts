@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#########################################################################
+# 
+# install: sudo python3 -m pip install certbot-dns-desec
+# to use run: sudo ./cert_script domain token 
+# for auto renewal add: certbot renew to crontab 
+#
+#########################################################################
+
+
+# Function to setup Let's Encrypt for a domain
+setup_le () {
+    DOMAIN=$1
+    TOKEN=$2
+
+    # Store the token in a secure location
+    sudo mkdir -p /etc/letsencrypt/secrets/
+    sudo chmod 700 /etc/letsencrypt/secrets/
+    echo "dns_desec_token = $TOKEN" | sudo tee /etc/letsencrypt/secrets/$DOMAIN.ini
+    sudo chmod 600 /etc/letsencrypt/secrets/$DOMAIN.ini
+
+    # Request a wildcard certificate
+    certbot certonly \
+        --authenticator dns-desec \
+        --dns-desec-credentials /etc/letsencrypt/secrets/$DOMAIN.ini \
+        -d "$DOMAIN" \
+        -d "*.$DOMAIN"
+}
+
+# Check if there are enough arguments
+if (( $# < 2 )); then
+    echo "Usage: $0 domain1 token1 [domain2 token2 ...]"
+    exit 1
+fi
+
+# Loop over the arguments
+while (( "$#" )); do
+    DOMAIN=$1
+    TOKEN=$2
+    echo "Setting up Let's Encrypt for $DOMAIN ..."
+    setup_le $DOMAIN $TOKEN
+    shift 2
+done
+
+# Test automatic renewal
+sudo certbot renew
